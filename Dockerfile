@@ -6,6 +6,7 @@ FROM centos:7
 ARG ICINGA_REPO="https://github.com/Icinga/icinga2.git"
 ARG B2_REPO="https://github.com/Backblaze/B2_Command_Line_Tool.git"
 ARG BOOST_INSTALLER="https://dl.bintray.com/boostorg/release/1.68.0/source/boost_1_68_0.tar.gz"
+ARG BOOST_LIBRARIES="coroutine,atomic,chrono,context,date_time,fiber,filesystem,program_options,regex,serialization,system,thread,math"
 
 RUN yum update -y
 RUN yum install -y \
@@ -24,30 +25,17 @@ RUN yum install -y \
            postgresql-devel.x86_64 \
            python3.x86_64
 
-RUN /usr/bin/git clone $B2_REPO /root/B2_SOURCE &&\
-    cd /root/B2_SOURCE/ &&\
+RUN /usr/bin/git clone $B2_REPO /root/B2_SOURCE && \
+    cd /root/B2_SOURCE/ && \
     /usr/bin/python3 ./setup.py install
 
-RUN wget https://dl.bintray.com/boostorg/release/1.68.0/source/boost_1_68_0.tar.gz /root/ &&\
-    tar -xvf /root/boost_1_68_0.tar.gz /root/ &&\
-    cd /root/boost_1_68_0/
+RUN wget -O /root/boost_1_68_0.tar.gz -nv https://dl.bintray.com/boostorg/release/1.68.0/source/boost_1_68_0.tar.gz
+RUN tar -xf /root/boost_1_68_0.tar.gz --directory /root/
 
-RUN ./bootstrap.sh --prefix=/usr \
-                   --with-libraries= \
-                     coroutine, \
-                     atomic, \
-                     chrono, \
-                     context, \
-                     date_time, \
-                     fiber, \
-                     filesystem, \
-                     program_options, \
-                     regex, \
-                     serialization, \
-                     system, \
-                     thread,\
-                     math
-RUN ./b2 stage -j4 threading=multi link=shared
+RUN cd /root/boost_1_68_0 && \
+    ./bootstrap.sh --prefix=/usr/lib64/ \
+                   --with-libraries=$BOOST_LIBRARIES \
+    ./b2 stage -j4 threading=multi link=shared
 
 
 EXPOSE 80 5665
